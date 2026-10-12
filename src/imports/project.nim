@@ -35,6 +35,8 @@ proc resolveAssetUri(uri, projectDir: string): string {.raises: [AutoEditorError
     absolutePath(root / uri)
   except OSError as e:
     error &"Invalid Project asset URI '{uri}': {e.msg}"
+  except ValueError as e:
+    error &"Invalid Project asset URI '{uri}': {e.msg}"
 
 proc projectToV3Json*(project: JsonNode, projectDir: string): JsonNode
     {.raises: [AutoEditorError].} =
@@ -113,7 +115,7 @@ proc projectToV3Json*(project: JsonNode, projectDir: string): JsonNode
         error "Invalid Project clip timing or stream"
 
       var clipJson = %*{
-        "src": assets[assetId],
+        "src": assets.getOrDefault(assetId),
         "start": start,
         "dur": duration,
         "offset": sourceIn,
@@ -183,7 +185,7 @@ proc projectToV3Json*(project: JsonNode, projectDir: string): JsonNode
       let trackId = transition.requiredString("trackId")
       if not trackIds.hasKey(trackId):
         error &"Unknown Project track id in transition: {trackId}"
-      let trackRef = trackIds[trackId]
+      let trackRef = trackIds.getOrDefault(trackId)
       let kind = transition.requiredString("kind")
       if kind != "dissolve": error &"Unsupported Project transition kind: {kind}"
       let at = transition.requiredInt("atFrame")
