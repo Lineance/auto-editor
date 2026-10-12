@@ -155,12 +155,6 @@ type mainArgs* = object
   transitionMinCut*: PackedInt = pack(true, 1000) # 1 second
   placedTransitions*: seq[PlacedTransition] # library-only: chosen in an editor
 
-  # URL download Options
-  ytDlpLocation*: string = "yt-dlp"
-  outputFormat*: string
-  ytDlpExtras*: string
-  urlInput*: bool = false
-
   # Timeline Options
   resolution*: (int32, int32) = (0, 0)
   resolutionSet*: bool = false

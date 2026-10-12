@@ -158,14 +158,12 @@ proc exportExt(ext: string, myExport: ExportKind, hasVideo: bool): string =
     else: ext
 
 proc setOutput(userOut: string, `export`: ExportKind, path: string,
-    isUrl = false, hasVideo = false): (string, ExportKind) {.raises: [AutoEditorError].} =
+    hasVideo = false): (string, ExportKind) {.raises: [AutoEditorError].} =
   var dir, name, ext: string
   if userOut == "" or userOut == "-":
     if path == "":
       error "`--output` must be set." # When a timeline file is the input.
     (dir, name, ext) = agSplitFile(path)
-    if isUrl:
-      ext = "" # Don't inherit the downloaded file's container.
   else:
     (dir, name, ext) = agSplitFile(userOut)
 
@@ -173,7 +171,7 @@ proc setOutput(userOut: string, `export`: ExportKind, path: string,
 
   if ext == "":
     # Use `mkv` as the default, because it can handle any encoder.
-    ext = (if isUrl or path == "": ".mkv" else: agSplitFile(path).ext)
+    ext = (if path == "": ".mkv" else: agSplitFile(path).ext)
 
   var myExport = `export`
   if myExport == exAuto:
@@ -209,13 +207,12 @@ proc defaultOutput*(input: string, `export`: ExportKind, hasVideo: bool): string
   ## Where an export of `input` goes when no output is asked for.
   setOutput("", `export`, input, hasVideo = hasVideo)[0]
 
-proc setVideoCodec(inCodec: string, src: MediaInfo, rule: Rules,
-    isUrl = false): string {.raises: [].} =
+proc setVideoCodec(inCodec: string, src: MediaInfo, rule: Rules): string {.raises: [].} =
   if inCodec != "auto":
     return inCodec
 
   let codecId =
-    if isUrl or src.v.len == 0: ID_H264 else: src.v[0].codecId
+    if src.v.len == 0: ID_H264 else: src.v[0].codecId
 
   if rule.defaultVid == ID_NONE or rule.allowsCodec(codecId):
     return $avcodec_get_name(codecId)
@@ -641,16 +638,16 @@ proc editMedia*(args: var mainArgs, inputVideo: VideoSettings, audio: AudioSetti
   var tlName, fcpVersion: string
   let hasVideo = tlV3.v.len > 0 and not args.vn
   if args.`export`.kind == exAuto:
-    (output, exportKind) = setOutput(args.output, exAuto, usePath, args.urlInput,
-      hasVideo)
+    (output, exportKind) = setOutput(args.output, exAuto, usePath,
+      hasVideo = hasVideo)
     tlName = args.`export`.name
     fcpVersion = args.`export`.version
   else:
     exportKind = args.`export`.kind
     tlName = args.`export`.name
     fcpVersion = args.`export`.version
-    (output, _) = setOutput(args.output, exportKind, usePath, args.urlInput,
-      hasVideo)
+    (output, _) = setOutput(args.output, exportKind, usePath,
+      hasVideo = hasVideo)
 
   if args.preview:
     preview(tlV3)
@@ -696,7 +693,7 @@ proc editMedia*(args: var mainArgs, inputVideo: VideoSettings, audio: AudioSetti
 
   let rule = initRules(output)
   var video = inputVideo
-  video.codec = setVideoCodec(video.codec, mi, rule, args.urlInput)
+  video.codec = setVideoCodec(video.codec, mi, rule)
   let cache = newMediaCache()
   defer: cache.close()
 

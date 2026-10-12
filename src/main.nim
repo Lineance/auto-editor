@@ -1,7 +1,5 @@
 import std/[options, os, parseutils, sequtils, strformat, strutils]
 when not defined(emscripten):
-  import std/osproc
-  import ./media
   when defined(macosx) or defined(windows) or defined(linux):
     import std/tempfiles
     import ./[mic, wavutil]
@@ -42,7 +40,7 @@ proc printHelp() {.noreturn.} =
   let optWidth = clamp(termWidth div 3, 15, 32)
   let helpWidth = termWidth - optWidth - 4
 
-  echo "Usage: [file | url ... | :mic] [options]\n"
+  echo "Usage: [file | project.json | :mic] [options]\n"
   echo "Commands:"
   echo "  " & commands.mapIt(it.name).join(" ") & "\n"
   echo "Options:"
@@ -169,93 +167,6 @@ proc parseFrameRate(val: string): AVRational =
     warning &"{val} is not the NTSC film rate; use `-r ntsc_film` for 24000/1001"
   elif result == AVRational(num: 2997, den: 50):
     warning "59.94 is not the NTSC rate; use `-r 60000/1001`"
-
-when not defined(emscripten):
-  proc wantStreams(args: mainArgs): (bool, bool) =
-    ## Decide whether the video and/or audio streams are worth downloading,
-    ## based on what the output format holds and what --edit needs to analyze.
-    var (editV, editA) = args.edit.needs
-    for le in args.labeledEdits: # union the needs of every --edit:N method
-      let (v, a) = le.expr.needs
-      editV = editV or v
-      editA = editA or a
-
-    var outV = true
-    var outA = true
-    if args.preview:
-      (outV, outA) = (false, false) # --stats/--preview writes no output file.
-    elif args.output notin ["", "-"]:
-      let fmt = av_guess_format(nil, cstring(args.output), nil)
-      if fmt != nil:
-        outV = not args.vn and fmt.video_codec notin [ID_NONE, ID_PNG]
-        outA = not args.an and fmt.audio_codec != ID_NONE
-
-    result = (outV or editV, outA or editA)
-    if result == (false, false):
-      result[1] = true # Always fetch something to read media duration from.
-
-  proc downloadVideo(myInput: string, args: mainArgs): string =
-    let (wantVideo, wantAudio) = wantStreams(args)
-    conwrite(if wantVideo: "Downloading video..." else: "Downloading audio...")
-
-    let maxHeight = args.resolution[1]
-    var downloadFormat = ""
-    let vid = (if maxHeight != 0: &"bestvideo[height<={maxHeight}]" else: "bestvideo")
-    if wantVideo and wantAudio:
-      downloadFormat = vid & "+bestaudio"
-    elif wantVideo:
-      downloadFormat = vid
-    else:
-      downloadFormat = "bestaudio"
-
-    var outputFormat: string
-    if args.outputFormat != "":
-      outputFormat = args.outputFormat
-    else:
-      let (dir, name, _) = agSplitFile(myInput)
-      outputFormat = replace(dir & "/" & name, re"\W+", "-") & ".%(ext)s"
-
-    var cmd: seq[string] = @[]
-    if downloadFormat != "":
-      cmd.add(@["-f", downloadFormat])
-
-    cmd.add(@["-o", outputFormat, myInput])
-    if args.ytDlpExtras != "":
-      cmd.add(args.ytDlpExtras.split(" "))
-
-    let ytDlpPath = args.ytDlpLocation
-    var location: string
-    try:
-      location = execProcess(ytDlpPath,
-        args = @["--get-filename", "--no-warnings"] & cmd,
-        options = {poUsePath}).strip()
-    except OSError:
-      error "Program `yt-dlp` must be installed and on PATH."
-
-    # Only reuse an existing download if it already has the streams we need.
-    var reusable = false
-    if fileExists(location):
-      try:
-        let mi = initMediaInfo(location)
-        reusable = (not wantAudio or mi.a.len > 0) and
-                   (not wantVideo or mi.v.len > 0)
-      except IOError:
-        discard
-
-    if not reusable:
-      if fileExists(location):
-        try: removeFile(location)
-        except OSError: error &"Couldn't remove old download: {location}"
-
-      let p = startProcess(ytDlpPath, args = cmd, options = {poUsePath,
-          poParentStreams})
-      defer: p.close()
-      discard p.waitForExit()
-
-    if not fileExists(location):
-      error &"Download file wasn't created: {location}"
-
-    return location
 
 proc listAvailableFilters(): string =
   result = "Filters:"
@@ -427,7 +338,7 @@ const mainArgumentOptions = {
   coEdit, coWhenActive, coWhenInactive, coMargin, coSmooth, coTransition,
   coOutput, coCutOut, coAddIn, coSetSpeed, coSetAction, coSilentSpeed,
   coVideoSpeed, coExport, coFrameRate, coSampleRate, coResolution, coBackground,
-  coYtDlpLocation, coOutputFormat, coYtDlpExtras, coProgress, coVcodec,
+  coProgress, coVcodec,
   coVideoBitrate, coCrf, coGop, coVprofile, coPreset, coPixFmt, coScale, coAcodec,
   coLayout, coAudioBitrate, coAudioNormalize, coWhen,
 }
@@ -538,12 +449,6 @@ judge making cuts.
       args.setAction.add parseSpeedRange(key)
     of coSetAction:
       args.setAction.add parseActionAndRange(key, args)
-    of coYtDlpLocation:
-      args.ytDlpLocation = key
-    of coOutputFormat:
-      args.outputFormat = key
-    of coYtDlpExtras:
-      args.ytDlpExtras = key
     of coScale:
       video.scale = parseNum(key, $expecting)
       video.scaleSet = true
@@ -678,14 +583,10 @@ judge making cuts.
       else:
         error "Microphone capture (:mic) is not supported on this platform."
     elif myInput.startsWith("http://") or myInput.startsWith("https://"):
-      when defined(emscripten):
-        error "URL inputs are not supported in the wasm build."
-      else:
-        args.inputs[i] = downloadVideo(myInput, args)
-        args.urlInput = true
+      error "URL inputs are not supported. Download or import the media before running Auto-Editor."
     elif agSplitFile(myInput).ext == "":
       if dirExists(myInput):
-        error "Input must be a file or a URL, not a directory."
+        error "Input must be a file or project JSON, not a directory."
       if myInput.startsWith("-"):
         if i >= positionalStart:
           error &"Input file doesn't exist: {myInput}"

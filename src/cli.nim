@@ -2,14 +2,13 @@ import std/[macros, strformat, strutils]
 import ./util/suggest
 
 type Categories* = enum
-  cNone cEdit cTl cUrl cDis cCon cVid cAud cMis
+  cNone cEdit cTl cDis cCon cVid cAud cMis
 
 func categoryName*(c: Categories): string =
   case c
   of cNone: ""
   of cEdit: "Editing Options"
   of cTl: "Timeline Options"
-  of cUrl: "URL Download Options"
   of cDis: "Display Options"
   of cCon: "Container Settings"
   of cVid: "Video Rendering"
@@ -26,7 +25,6 @@ func `$`(link: Link): string =
 
 const fragmented = Link(href: "https://ffmpeg.org/ffmpeg-formats.html#Fragmentation",
     a: "fragmented")
-const ytDlp = Link(href: "https://github.com/yt-dlp/yt-dlp", a: "yt-dlp")
 const actionsRef = Link(href: "https://auto-editor.com/ref/actions",
     a: "actions reference")
 
@@ -42,8 +40,8 @@ type CliOption* = enum
     coStartSample, coLengthSamples, coShell, coWhenActive, coWhenInactive, coMargin,
     coSmooth, coTransition, coCutOut, coAddIn, coSetSpeed, coSetAction, coSilentSpeed,
     coVideoSpeed, coPremiere, coResolve, coFinalCutPro, coShotcut, coKdenlive, coExport,
-    coFrameRate, coSampleRate, coResolution, coBackground, coYtDlpLocation,
-    coOutputFormat, coYtDlpExtras, coProgress, coQuiet, coPreview, coVn, coAn, coSn,
+    coFrameRate, coSampleRate, coResolution, coBackground, coProgress, coQuiet,
+    coPreview, coVn, coAn, coSn,
     coDn, coFaststart, coNoFaststart, coFragmented, coNoFragmented, coVcodec,
     coVideoBitrate, coCrf, coGop, coVprofile, coPreset, coPixFmt, coScale, coNoSeek,
     coNoPartialLossless, coAcodec, coLayout, coAudioBitrate, coMixAudioStreams,
@@ -244,13 +242,6 @@ Examples:
     metavar: "WIDTH,HEIGHT", help: "Set timeline width and height"),
   OptDef(names: "-b, -bg, --background", c: cTl, datum: coBackground, metavar: "COLOR",
     help: "Set the background as a solid RGB color"),
-
-  OptDef(names: "--yt-dlp-location", c: cUrl, datum: coYtDlpLocation, metavar: "PATH",
-    help: &"Set a custom path to {ytDlp}"),
-  OptDef(names: "--output-format", c: cUrl, datum: coOutputFormat, metavar: "TEMPLATE",
-    help: "Set the yt-dlp output file template (--output, -o)"),
-  OptDef(names: "--yt-dlp-extras", c: cUrl, datum: coYtDlpExtras, metavar: "CMD",
-    help: "Add extra options for yt-dlp. Must be in quotes"),
 
   OptDef(names: "--progress", c: cDis, datum: coProgress, metavar: "PROGRESS",
     help: "Set what type of progress bar to use"),
