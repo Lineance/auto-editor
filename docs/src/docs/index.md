@@ -16,5 +16,6 @@ title: The Docs
  * [The v1 format](./v1)
  * [The v2 format](./v2)
  * [The v3 format](./v3)
+ * [Project v1](./project)
 
 See also: [reference](../ref)

@@ -435,7 +435,7 @@ proc buildTimeline*(args: var mainArgs, audio: AudioSettings,
   var mi: MediaInfo
   if args.inputs.len == 0 and not stdin.isatty():
     let stdinContent = readAll(stdin)
-    tlV3 = readJson(stdinContent, interner)
+    tlV3 = readJson(stdinContent, interner, getCurrentDir())
     tlV3.applyArgs(args, audio)
   else:
     if args.inputs.len == 0:
@@ -444,7 +444,7 @@ proc buildTimeline*(args: var mainArgs, audio: AudioSettings,
     let inputExt = agSplitFile(input).ext
 
     if inputExt in [".v1", ".v2", ".v3", ".json"]:
-      tlV3 = readJson(readFile(input), interner)
+      tlV3 = readJson(readFile(input), interner, parentDir(absolutePath(input)))
       tlV3.applyArgs(args, audio)
     elif inputExt == ".xml":
       tlV3 = fcp7ReadXml(input, interner)

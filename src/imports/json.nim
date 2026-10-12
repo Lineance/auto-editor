@@ -2,6 +2,7 @@ import std/[json, strformat]
 
 import ../[action, av, ffmpeg, media, log, timeline]
 import ../util/[color, lang, rational]
+import ./project
 
 proc parseActionOrErr(val: string): Action {.raises: [AutoEditorError].} =
   try: parseAction(val)
@@ -268,9 +269,14 @@ proc parseV1*(jsonNode: JsonNode, interner: var StringInterner): v3 {.raises: [A
     tb = AVRational(num: 30, den: 1)
   result = toNonLinear(ptrInput, tb, mi, chunks)
 
-proc readJson*(jsonStr: string, interner: var StringInterner): v3 {.raises: [AutoEditorError].} =
+proc readJson*(jsonStr: string, interner: var StringInterner,
+    projectDir = ""): v3 {.raises: [AutoEditorError].} =
   let jsonNode = try: parseJson(jsonStr)
     except CatchableError as e: error "Invalid JSON: " & e.msg
+  if jsonNode.kind != JObject:
+    error "JSON root must be an object"
+  if jsonNode{"schemaVersion"} != nil and jsonNode{"projectId"} != nil:
+    return parseV3(projectToV3Json(jsonNode, projectDir), interner)
   let version = jsonNode{"version"}.getStr("unknown")
 
   case version:
