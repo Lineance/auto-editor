@@ -1,7 +1,7 @@
 import std/[heapqueue, options, sequtils, sets, strformat, strutils]
 from std/math import round
 
-import ../[action, av, ffmpeg, license, log, media, timeline, throttle]
+import ../[action, av, ffmpeg, log, media, timeline, throttle]
 import ../util/[bar, rules, rational]
 import ./[video, audio, subtitle, partialplan]
 
@@ -145,25 +145,6 @@ proc makeMedia*(args: mainArgs, inputVideo: VideoSettings, audio: AudioSettings,
   let includeAudio = not args.an and rules.defaultAud != ID_NONE
   let includeSubtitle = not args.sn and rules.defaultSub != ID_NONE
   let renderVideo = includeVideo and renderTl.v.len > 0 and renderTl.v[0].len > 0
-  if renderVideo:
-    template limitTo(limit: SizeLimit, what: string) =
-      let (width, height) = scaledVideoResolution(renderTl.res, video.scale)
-      if not fits(width, height, limit):
-        # Without a key, shrink to fit, unless the size was asked for exactly.
-        if licenseKeyProvided(args) or (video.scaleSet and args.resolutionSet):
-          requireLicense(args, "render " & what & " above " & $limit)
-        else:
-          video.scale = min(video.scale,
-            fitScale(renderTl.res[0], renderTl.res[1], limit))
-          let (w, h) = scaledVideoResolution(renderTl.res, video.scale)
-          warning "Rendering " & what & " without a license is limited to " &
-            $limit & "; using --scale " & formatFloat(video.scale, ffDefault, 4) &
-            " (" & $w & "x" & $h & ")."
-
-    if renderTl.numberOfSrc > 1:
-      limitTo(FREE_MULTI_SOURCE, "video with multiple sources")
-    limitTo(FREE_RENDER, "video")
-
   var options: OutputOptions
   if args.fragmented and not args.noFragmented:
     options.add("frag_duration", "0.2")

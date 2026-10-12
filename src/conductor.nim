@@ -3,7 +3,7 @@ when not defined(emscripten):
   from std/browsers import openDefaultBrowser
 from std/math import round
 
-import ./[av, action, edit, ffmpeg, license, log, media, stats, timeline]
+import ./[av, action, edit, ffmpeg, log, media, stats, timeline]
 import ./lib/editutil
 import ./util/[color, bar, fun, lang, rules, rational]
 
@@ -655,14 +655,6 @@ proc editMedia*(args: var mainArgs, inputVideo: VideoSettings, audio: AudioSetti
   if args.preview:
     preview(tlV3)
     return
-
-  # Timeline/project exports that draw from more than one source remain a paid
-  # feature. Rendered media is handled in makeMedia, where an unlicensed render
-  # can continue at SD resolution. This also covers timelines imported from a
-  # file/stdin, which never pass through the CLI-level checks.
-  if tlV3.numberOfSrc > 1 and
-      exportKind notin {exDefault, exClipSequence}:
-    requireLicense(args, "export a timeline with multiple sources")
 
   case exportKind:
   of exV1, exV2, exV3:

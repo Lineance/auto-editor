@@ -169,8 +169,6 @@ type mainArgs* = object
   background*: Option[RGBColor] = none(RGBColor)
   progress*: BarType = modern
 
-  # Licensing
-  licenseKey*: string # -k/--license-key; gates paid features (see license.nim)
   flags: uint32
 
 genFlagInterface(mainArgs)

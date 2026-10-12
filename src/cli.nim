@@ -47,7 +47,7 @@ type CliOption* = enum
     coDn, coFaststart, coNoFaststart, coFragmented, coNoFragmented, coVcodec,
     coVideoBitrate, coCrf, coGop, coVprofile, coPreset, coPixFmt, coScale, coNoSeek,
     coNoPartialLossless, coAcodec, coLayout, coAudioBitrate, coMixAudioStreams,
-    coAudioNormalize, coOpen, coNoOpen, coKey, coShowVersion, coWebCodecs, coWhen
+    coAudioNormalize, coOpen, coNoOpen, coShowVersion, coWebCodecs, coWhen
 
 type OptDef* = object
   names*: string
@@ -324,8 +324,6 @@ Apply audio normalizing (either ebu or peak). Applied right before rendering the
     help: "Open the output file after editing is done"),
   OptDef(names: "--no-open", c: cMis, kind: Flag, datum: coNoOpen,
     help: "Do not open the output file after editing is done (default)"),
-  OptDef(names: "-k, --license-key", c: cMis, datum: coKey,
-    help: "Provide a license key, which activates certain features"),
   OptDef(names: "-V, -v, --version", c: cMis, kind: Flag, datum: coShowVersion,
     help: "Show info about this program or option"),
 ]

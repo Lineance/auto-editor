@@ -10,7 +10,7 @@ when not defined(emscripten):
 when not defined(windows) and not defined(emscripten):
   import std/posix_utils
 
-import ./[about, action, cli, conductor, edit, ffmpeg, license, log]
+import ./[about, action, cli, conductor, edit, ffmpeg, log]
 when defined(emscripten):
   import ./av
 import cmds/[info, desc, cache, levels, subdump, waveform, whisper]
@@ -429,7 +429,7 @@ const mainArgumentOptions = {
   coVideoSpeed, coExport, coFrameRate, coSampleRate, coResolution, coBackground,
   coYtDlpLocation, coOutputFormat, coYtDlpExtras, coProgress, coVcodec,
   coVideoBitrate, coCrf, coGop, coVprofile, coPreset, coPixFmt, coScale, coAcodec,
-  coLayout, coAudioBitrate, coAudioNormalize, coKey, coWhen,
+  coLayout, coAudioBitrate, coAudioNormalize, coWhen,
 }
 
 assertArgumentOptions(mainOptions, mainArgumentOptions, {coWhen})
@@ -597,8 +597,6 @@ judge making cuts.
       args.smooth = parseTwoLengths(key, $expecting)
     of coTransition:
       (args.transition, args.transitionMinCut) = parseTransition(key)
-    of coKey:
-      args.licenseKey = key
     else:
       discard
     expecting = coNone
@@ -625,12 +623,6 @@ judge making cuts.
       echo "OS: ", plat.sysname, " ", plat.release, " ", plat.machine
     echo listAvailableFilters()
     quit(0)
-
-  # Fail fast on `add` (a CLI-only signal) before any expensive analysis.
-  # Multiple inputs are handled later by the multi-source render/export policy
-  # in conductor.editMedia, which also covers imported timelines.
-  if args.adds.len > 0:
-    requireLicense(args, "use the `add` action")
 
   var micTempPath = ""
   defer:
