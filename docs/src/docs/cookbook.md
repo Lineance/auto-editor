@@ -172,15 +172,6 @@ Auto-editor can also export to `resolve`, `final-cut-pro`, `shotcut`, and
 auto-editor video.mp4 --export clip-sequence
 ```
 
-## Edit straight from a URL
-
-If [yt-dlp](https://github.com/yt-dlp/yt-dlp) is installed, pass a link as the
-input:
-
-```sh
-auto-editor "https://www.youtube.com/watch?v=kcs82HnguGc"
-```
-
 ## See Also
 - [How to Shrink File Size](./file-size)
 - [All the Options (and What They Do)](/ref/options)

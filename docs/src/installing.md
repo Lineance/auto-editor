@@ -66,12 +66,7 @@ nimble makeffwinarm
 nimble makewinarm
 ```
 
-## Optional Dependencies
-If yt-dlp is installed, auto-editor can download and use URLs as inputs.
-```sh
-auto-editor "https://www.youtube.com/watch?v=kcs82HnguGc"
-```
-
-How yt-dlp is installed does not matter.
+## Inputs
+Auto-Editor accepts local media files and timeline or Project JSON. It does not download remote URLs; prepare media assets before invoking the editor.
 
 <a class="next" href="/docs/cookbook">Next: Cookbook</a>
