@@ -34,9 +34,8 @@ type OptKind* = enum
   Special # args.`export` = parseExportString("$datum")
 
 type CliOption* = enum
-  coNone, coIsDebug, coSplitWords, coLanguage, coFormat, coOutput, coTranslate, coQueue,
-    coPrompt, coThreads, coThreshold, coIsJson, coEncoders, coDecoders, coCodecs, coEdit,
-    coTimebase, coDisplay, coNoCache, coAsJson, coStream, coChannel, coSamplesPerBucket,
+  coNone, coIsDebug, coIsJson, coEncoders, coDecoders, coCodecs, coEdit,
+    coOutput, coTimebase, coDisplay, coNoCache, coAsJson, coStream, coChannel, coSamplesPerBucket,
     coStartSample, coLengthSamples, coShell, coWhenActive, coWhenInactive, coMargin,
     coSmooth, coTransition, coCutOut, coAddIn, coSetSpeed, coSetAction, coSilentSpeed,
     coVideoSpeed, coPremiere, coResolve, coFinalCutPro, coShotcut, coKdenlive, coExport,
@@ -99,30 +98,6 @@ macro genCliOptionToString(options: static seq[OptDef]): untyped =
       newStmtList(newLit(label)))
 
   result = caseStmt
-
-const whisperOptions*: seq[OptDef] = @[
-  OptDef(names: "--debug", kind: Flag, datum: coIsDebug,
-    help: "Show debugging messages and values"),
-  OptDef(names: "-sw, --split-word, --split-words", kind: Flag, datum: coSplitWords,
-    help: "Output one word per cue instead of full segments"),
-  OptDef(names: "-l, --language", datum: coLanguage, metavar: "LANG",
-    help: "Set the language instead of using \"auto\". Examples: en, ja"),
-  OptDef(names: "-f, --format", datum: coFormat, metavar: "FORMAT",
-    help: "Output in a specific format {text|srt|json} (default text)"),
-  OptDef(names: "-o, --output", datum: coOutput, metavar: "FILE",
-    help: "Choose where to output (defaults to stdout)"),
-  OptDef(names: "-tr, --translate", kind: Flag, datum: coTranslate,
-    help: "Translate from source language to english"),
-  OptDef(names: "--queue", datum: coQueue, metavar: "SECS",
-    help: "The maximum size in seconds of a single transcribed segment (default 30)"),
-  OptDef(names: "--prompt", datum: coPrompt, metavar: "TEXT",
-    help: "Bias transcription toward given vocabulary/spelling (e.g. names, jargon)"),
-  OptDef(names: "--threads", datum: coThreads, metavar: "N",
-    help: "Number of CPU threads for whisper processing (default 4)"),
-  OptDef(names: "-t, --threshold", datum: coThreshold, metavar: "THRES",
-    help: "The loudness (0-1) below which audio is treated as silence and " &
-          "skipped, like the audio edit method (default 0.04)"),
-]
 
 const infoOptions*: seq[OptDef] = @[
   OptDef(names: "--json", kind: Flag, datum: coIsJson,
@@ -320,8 +295,7 @@ Apply audio normalizing (either ebu or peak). Applied right before rendering the
 ]
 
 const cliOptions =
-  whisperOptions & infoOptions & levelsOptions & subdumpOptions &
-    waveformOptions & completionOptions & mainOptions
+  infoOptions & levelsOptions & subdumpOptions & waveformOptions & completionOptions & mainOptions
 
 func `$`*(opt: CliOption): string {.raises: [].} =
   genCliOptionToString(cliOptions)
@@ -344,8 +318,6 @@ const commands*: seq[CmdDef] = @[
       opts: subdumpOptions),
   CmdDef(name: "waveform", help: "Draw waveforms for library users. Unstable interface",
       opts: waveformOptions, shellCompletion: false),
-  CmdDef(name: "whisper", help: "Transcribe audio with ggml models\nUsage: <file> <model> [options]",
-      opts: whisperOptions),
 ] & (
   when defined(emscripten): @[] else: @[
     CmdDef(name: "completion", help: "Generate completions for shells",

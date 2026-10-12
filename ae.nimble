@@ -16,7 +16,6 @@ import std/[os, strutils, strformat, sequtils]
 let disableVpx = getEnv("DISABLE_VPX").len > 0
 let disableSvtAv1 = getEnv("DISABLE_SVTAV1").len > 0
 let disableHevc = getEnv("DISABLE_HEVC").len > 0
-let enableWhisper = getEnv("DISABLE_WHISPER").len == 0
 let enableVpl = getEnv("DISABLE_VPL").len == 0
 let enableLibass = getEnv("DISABLE_LIBASS").len == 0
 
@@ -208,25 +207,6 @@ let svtav1 = Package(
   buildArguments: @["-DBUILD_APPS=OFF", "-DBUILD_DEC=OFF", "-DBUILD_ENC=ON", "-DENABLE_NASM=ON"],
   ffFlag: "--enable-libsvtav1",
 )
-let whisper = Package(
-  name: "whisper",
-  sourceUrl: "https://github.com/ggml-org/whisper.cpp/archive/refs/tags/v1.9.5.tar.gz",
-  sha256: "ff1a9053feb509ff9d7729703355541ae9690073a6b1c40eb692c962e0dc1720",
-  buildSystem: "cmake",
-  buildArguments: @[
-    "-DGGML_NATIVE=OFF", # Favor portability, don't use native CPU instructions
-    "-DGGML_CUDA=OFF",
-    "-DWHISPER_SDL2=OFF",
-    "-DWHISPER_BUILD_EXAMPLES=OFF",
-    "-DWHISPER_BUILD_TESTS=OFF",
-    "-DWHISPER_BUILD_SERVER=OFF",
-    "-DWHISPER_BUILD_IS_DEV=OFF", # Building from a release tag, not a nightly
-    when defined(macosx) and hostCPU == "arm64": "-DGGML_METAL=ON" else: "-DGGML_METAL=OFF",
-    when defined(macosx): "-DGGML_METAL_EMBED_LIBRARY=ON" else: "-DGGML_METAL_EMBED_LIBRARY=OFF",
-    when defined(macosx): "-DGGML_BLAS=ON" else: "-DGGML_BLAS=OFF",
-  ],
-  ffFlag: "--enable-whisper",
-)
 let x264 = Package(
   name: "x264",
   sourceUrl: "https://code.videolan.org/videolan/x264/-/archive/b35605ace3ddf7c1a5d67a2eb553f034aef41d55/x264-b35605ace3ddf7c1a5d67a2eb553f034aef41d55.tar.bz2",
@@ -322,8 +302,6 @@ proc selectPackages(kind: CrossKind = native): seq[Package] =
     result.add alsa
   if enableVpl and kind != winArm and kind != armv7 and not isWasm and not isMacNative:
     result.add libvpl
-  if enableWhisper:
-    result.add whisper
   result &= [lamer, opus, dav1d, x264, zlib]
   if enableLibass and not isWasm:
     result &= [freetype, fribidi, harfbuzz]
@@ -350,8 +328,6 @@ func dirName(package: Package): string =
     return "nv-codec-headers-n13.0.19.0"
   if package.name == "amf-headers":
     return "AMF-1.5.2"
-  if package.name == "whisper":
-    return "whisper.cpp-1.9.5"
   if package.name == "lamer":
     return "lamer-3.101.0"
 
@@ -438,7 +414,7 @@ proc cmakeBuild(package: Package, buildPath: string, kind: CrossKind) =
     cmakeArgs.add("-DSVT_AV1_LTO=OFF")
 
   let sourceDir = absolutePath(".")
-  if package.name == "libsvtav1" or package.name == "whisper":
+  if package.name == "libsvtav1":
     cmakeArgs.add(&"-DCMAKE_C_FLAGS=-ffile-prefix-map={sourceDir}/=")
     cmakeArgs.add(&"-DCMAKE_CXX_FLAGS=-ffile-prefix-map={sourceDir}/=")
 
@@ -457,21 +433,12 @@ proc cmakeBuild(package: Package, buildPath: string, kind: CrossKind) =
   if kind == winX64:
     let toolchainFile = buildPath.parentDir / "scripts" / "x86_64-w64-mingw32.cmake"
     cmakeArgs.add(&"-DCMAKE_TOOLCHAIN_FILE={toolchainFile}")
-    if package.name == "whisper":
-      # llvm-mingw has no libgomp; ggml falls back to its own threadpool
-      cmakeArgs.add("-DGGML_OPENMP=OFF")
   elif kind == winArm:
     let toolchainFile = buildPath.parentDir / "scripts" / "aarch64-w64-mingw32.cmake"
     cmakeArgs.add(&"-DCMAKE_TOOLCHAIN_FILE={toolchainFile}")
-    if package.name == "whisper":
-      cmakeArgs.add("-DGGML_OPENMP=OFF")
   elif kind == armv7:
     let toolchainFile = buildPath.parentDir / "scripts" / "arm-linux-gnueabihf.cmake"
     cmakeArgs.add(&"-DCMAKE_TOOLCHAIN_FILE={toolchainFile}")
-    if package.name == "whisper":
-      cmakeArgs.add("-DGGML_OPENMP=OFF")
-  if package.name == "whisper" and kind != native:
-    cmakeArgs.add(["-DGGML_METAL=OFF", "-DGGML_METAL_EMBED_LIBRARY=OFF", "-DGGML_BLAS=OFF"])
 
   withDir cmakeBuildDir:
     if not fileExists("CMakeCache.txt"):
@@ -480,53 +447,6 @@ proc cmakeBuild(package: Package, buildPath: string, kind: CrossKind) =
       exec cmakeCmd
       makeInstall()
 
-  # Fix whisper.pc file to include correct library order and dependencies
-  if package.name == "whisper":
-    # Fix library naming for cross-compilation - add lib prefix if missing
-    let libDir = buildPath / "lib"
-    for libFile in ["ggml.a", "ggml-base.a", "ggml-cpu.a"]:
-      let srcFile = libDir / libFile
-      let dstFile = libDir / ("lib" & libFile)
-      if fileExists(srcFile) and not fileExists(dstFile):
-        echo &"Renaming {srcFile} to {dstFile}"
-        exec &"mv \"{srcFile}\" \"{dstFile}\""
-
-    # ggml-base.a is built but not installed by cmake; copy it manually
-    let ggmlBaseDst = libDir / "libggml-base.a"
-    if not fileExists(ggmlBaseDst):
-      let ggmlBaseSrc = "build_cmake/ggml/src/ggml-base.a"
-      if fileExists(ggmlBaseSrc):
-        echo &"Copying {ggmlBaseSrc} to {ggmlBaseDst}"
-        exec &"cp \"{ggmlBaseSrc}\" \"{ggmlBaseDst}\""
-    
-    # Write whisper.pc from scratch to avoid format changes breaking string substitution
-    let pcFile = buildPath / "lib/pkgconfig/whisper.pc"
-    echo "Writing whisper.pc file"
-    let (libs, libsPrivate) =
-      if kind == native and defined(macosx) and hostCPU == "arm64":
-        ("-L${libdir} -lwhisper -lparakeet -lggml-base -lggml -lggml-cpu -lggml-blas -lggml-metal",
-         "-framework Accelerate -framework Metal -framework MetalKit -framework Foundation -lc++")
-      elif kind == native and defined(macosx):
-        ("-L${libdir} -lwhisper -lparakeet -lggml-base -lggml -lggml-cpu -lggml-blas",
-         "-framework Accelerate -framework MetalKit -framework Foundation -lc++")
-      elif kind in {winX64, winArm}:
-        ("-L${libdir} -lwhisper -lparakeet -lggml-base -lggml -lggml-cpu",
-         "-lpthread -lm -lstdc++")
-      else:
-        ("-L${libdir} -lwhisper -lparakeet -lggml-base -lggml -lggml-cpu",
-         "-lgomp -lpthread -lm -lstdc++")
-    writeFile(pcFile, &"""prefix={buildPath}
-exec_prefix=${{prefix}}
-libdir=${{exec_prefix}}/lib
-includedir=${{prefix}}/include
-
-Name: whisper
-Description: whisper.cpp
-Version: 1.9.5
-Libs: {libs}
-Libs.private: {libsPrivate}
-Cflags: -I${{includedir}}
-""")
 
 proc cmakeBuildWasm(package: Package, buildPath: string, kind: CrossKind = wasm32) =
   let cmakeBuildDir = buildPath / "pkg" / package.name
@@ -542,23 +462,6 @@ proc cmakeBuildWasm(package: Package, buildPath: string, kind: CrossKind = wasm3
         "-DBUILD_SHARED_LIBS=OFF",
       ]
       case package.name
-      of "whisper":
-        args &= @[
-          "-DGGML_NATIVE=OFF", "-DGGML_CUDA=OFF", "-DGGML_METAL=OFF",
-          "-DGGML_BLAS=OFF", "-DGGML_OPENMP=OFF", "-DGGML_BACKEND_DL=OFF",
-          "-DWHISPER_SDL2=OFF", "-DWHISPER_BUILD_EXAMPLES=OFF",
-          "-DWHISPER_BUILD_TESTS=OFF", "-DWHISPER_BUILD_SERVER=OFF",
-          "-DWHISPER_BUILD_IS_DEV=OFF",
-          "-DEMSCRIPTEN_SYSTEM_PROCESSOR=" & (if kind == wasm64: "wasm64" else: "wasm32"),
-        ]
-        # -msimd128 enables ggml's hand-written wasm SIMD paths; -mfma exposes
-        # the compatible FMA intrinsics and -mrelaxed-simd enables fused ops.
-        args &= @[
-          &"\"-DCMAKE_C_FLAGS=-msimd128 -mfma -mrelaxed-simd{memArg}\"",
-          &"\"-DCMAKE_CXX_FLAGS=-msimd128 -mfma -mrelaxed-simd{memArg}\"",
-        ]
-        if kind == wasm64:
-          args.add "\"-DCMAKE_EXE_LINKER_FLAGS=-m64\""
       of "libsvtav1":
         # -fno-honor-nans works around an isKnownNeverNaN stack overflow in
         # emscripten 6.0.3's clang when selecting simd128 fmin/fmax patterns
@@ -574,31 +477,6 @@ proc cmakeBuildWasm(package: Package, buildPath: string, kind: CrossKind = wasm3
                   &"\"-DCMAKE_CXX_FLAGS=-matomics -msimd128 -mfma{memArg}\""]
       exec "emcmake cmake " & sourceDir & " " & args.join(" ")
     exec "make -j4 && make install"
-
-  if package.name == "whisper":
-    let libDir = buildPath / "lib"
-    for libFile in ["ggml.a", "ggml-base.a", "ggml-cpu.a"]:
-      let srcFile = libDir / libFile
-      let dstFile = libDir / ("lib" & libFile)
-      if fileExists(srcFile) and not fileExists(dstFile):
-        exec &"mv \"{srcFile}\" \"{dstFile}\""
-    let ggmlBaseDst = libDir / "libggml-base.a"
-    if not fileExists(ggmlBaseDst):
-      let ggmlBaseSrc = cmakeBuildDir / "ggml/src/ggml-base.a"
-      if fileExists(ggmlBaseSrc):
-        exec &"cp \"{ggmlBaseSrc}\" \"{ggmlBaseDst}\""
-    writeFile(libDir / "pkgconfig" / "whisper.pc", &"""prefix={buildPath}
-exec_prefix=${{prefix}}
-libdir=${{exec_prefix}}/lib
-includedir=${{prefix}}/include
-
-Name: whisper
-Description: whisper.cpp
-Version: 1.9.5
-Libs: -L${{libdir}} -lwhisper -lparakeet -lggml-base -lggml -lggml-cpu
-Libs.private: -lpthread -lm -lstdc++
-Cflags: -I${{includedir}}
-""")
 
 proc mesonBuild(package: Package, buildPath: string, kind: CrossKind) =
   let mesonBuildDir = buildPath / "pkg" / package.name
@@ -1143,7 +1021,7 @@ proc setupDeps =
     exec "pip install " & toInstall.join(" ")
 
 task downloaddeps, "Download and Extract Cxx Dependencies":
-  let allPackages = @[ffmpeg, nvheaders, amfheaders, alsa, libvpl, whisper, lamer, opus, dav1d, x264, zlib, vpx, svtav1, x265, freetype, fribidi, harfbuzz, expat, fontconfig, libass]
+  let allPackages = @[ffmpeg, nvheaders, amfheaders, alsa, libvpl, lamer, opus, dav1d, x264, zlib, vpx, svtav1, x265, freetype, fribidi, harfbuzz, expat, fontconfig, libass]
   mkDir "ffmpeg_sources"
   withDir "ffmpeg_sources":
     for package in allPackages:

@@ -3,7 +3,6 @@ import std/[strformat, strutils]
 var enableVpx = getEnv("DISABLE_VPX").len == 0
 var enableSvtav1 = getEnv("DISABLE_SVTAV1").len == 0
 var enableHevc = getEnv("DISABLE_HEVC").len == 0 and not defined(emscripten)
-var enableWhisper = getEnv("DISABLE_WHISPER").len == 0
 var enableVpl = getEnv("DISABLE_VPL").len == 0 and not defined(macosx)
 var enableLibass = getEnv("DISABLE_LIBASS").len == 0 and not defined(emscripten)
 
@@ -34,12 +33,6 @@ when defined(dynamic):
   if ffmpegLibs.exitCode == 0:
     switch("passL", ffmpegLibs.output.strip())
 
-  let whisperCflags = gorgeEx("pkg-config --cflags whisper parakeet ggml", "")
-  let whisperLibs = gorgeEx("pkg-config --libs whisper parakeet ggml", "")
-  if enableWhisper and whisperCflags.exitCode == 0 and whisperLibs.exitCode == 0:
-    switch("define", "whisper")
-    switch("passC", whisperCflags.output.strip())
-    switch("passL", whisperLibs.output.strip())
 else:
   switch("passC", &"-I./{buildPath}/include")
   switch("passL", &"-L./{buildPath}/lib")
@@ -132,7 +125,7 @@ if not defined(dynamic):
       switch("passL", "-lgdi32")
 
 when hostOS == "macosx":
-  let (osVer, osVerCode) = gorgeEx("sw_vers -productVersion", "")
+  let (osVer, _) = gorgeEx("sw_vers -productVersion", "")
   let majorVer = osVer.strip().split(".")[0]
   if defined(dynamic):
     switch("passC", "-mmacosx-version-min=" & majorVer & ".0")
@@ -141,23 +134,6 @@ when hostOS == "macosx":
   switch("passL", "-framework CoreFoundation -framework CoreMedia -framework CoreAudio -framework CoreVideo")
   when not defined(dynamic):
     switch("passL", "-framework AVFoundation -framework Foundation -framework CoreGraphics")
-  when not defined(emscripten):
-    # Apple SpeechAnalyzer backend for `whisper <file> apple` (macOS 26+ only).
-    let osMajor = (try: parseInt(majorVer) except ValueError: 0)
-    if osVerCode == 0 and osMajor >= 26:
-      # Deployment target 14 (matching the C side) so release binaries still
-      # launch on pre-26 macOS; the shim weak-links Speech's new symbols.
-      let shim = gorgeEx("[ build/lib/libae_speech.a -nt src/ae_speech.swift ] || " &
-        "(mkdir -p build/lib && swiftc -O -parse-as-library -emit-library -static " &
-        "-target $(uname -m)-apple-macos14.0 " &
-        "-o build/lib/libae_speech.a src/ae_speech.swift)")
-      if shim.exitCode == 0:
-        switch("define", "appleSpeech")
-        switch("passL", "./build/lib/libae_speech.a")
-        switch("passL", "-L/usr/lib/swift")
-        switch("passL", "-framework Speech -framework AVFoundation -framework Foundation")
-      else:
-        echo "warning: skipping Apple speech shim: " & shim.output
 elif hostOS == "windows":
   switch("passL", "-lpthread -lbcrypt -lsetupapi -lpsapi -lole32 -lstrmiids -luuid -loleaut32 -lshlwapi")
 elif not defined(dynamic) and hostOS == "linux" and not defined(emscripten):
@@ -171,26 +147,8 @@ elif not defined(dynamic) and hostOS == "linux" and not defined(emscripten):
     switch("passL", "-L./build/lib/x86_64-linux-gnu")
     switch("passL", "-L./build/lib64")
 
-if not defined(dynamic) and enableWhisper:
-  switch("define", "whisper")
-  switch("passL", "-lwhisper")
-  switch("passL", "-lparakeet")
-  switch("passL", "-lggml-base")
-  switch("passL", "-lggml")
-  switch("passL", "-lggml-cpu")
-  when defined(macosx):
-    switch("passL", "-lggml-blas")
-    when defined(arm64):
-      switch("passL", "-lggml-metal")
-    switch("passL", "-framework Accelerate")
-    switch("passL", "-framework Metal -framework MetalKit -framework Foundation")
-  elif hostOS != "windows" and not defined(emscripten):
-    # Windows builds use llvm-mingw (no libgomp); ggml is built with
-    # GGML_OPENMP=OFF there and uses its own threadpool.
-    switch("passL", "-lgomp")
-
 if not defined(dynamic):
-  if enableHevc or enableWhisper or defined(linux):
+  if enableHevc or defined(linux):
     # Link the C++ standard library
     switch("passL", when defined(macosx): "-lc++" else: "-lstdc++")
 

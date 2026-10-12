@@ -243,9 +243,8 @@ proc fatal*(msg: string) {.noreturn, raises: [].} =
   ## Print and exit immediately. For the CLI's top level and signal handlers,
   ## where raising isn't possible or wanted.
   printError(msg)
-  # _exit, not quit: exit() runs C++ static destructors, and ggml's Metal
-  # backend asserts in one when a failed model load left buffers behind —
-  # turning a clean error message into a crash dump.
+  # _exit, not quit: avoid running external library static destructors after a
+  # fatal error, which can obscure the original diagnostic.
   try:
     stdout.flushFile()
     stderr.flushFile()
