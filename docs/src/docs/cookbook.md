@@ -145,17 +145,15 @@ auto-editor video.mp4 --cut-out start,30sec -30sec,end
 
 More in [Range Syntax](./range-syntax.md).
 
-## Edit by what was said
+## Edit from subtitles
 
-Transcribe speech, then cut on the words. First make subtitles, then edit with
-them:
+Auto-Editor does not transcribe audio. Supply an existing subtitle stream or a
+sibling `.srt`/`.ass` file, then edit by subtitle content:
 
 ```sh
-auto-editor whisper video.mp4 ggml-medium.en.bin --format srt -o video.srt
 auto-editor video.mp4 --edit subtitle
+auto-editor video.mp4 --edit word:question
 ```
-
-Auto-Editor understands `video.srt` is related to `video.mp4`. See the [whisper command](./subcommands/whisper.md) for more details.
 
 ## Hand off to your video editor
 

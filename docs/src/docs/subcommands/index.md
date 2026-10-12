@@ -9,6 +9,5 @@ Commands (or subcommands) are auxiliary programs that offer additional functiona
 * [info](./info.md)
 * [levels](./levels.md)
 * [subdump](./subdump.md)
-* [whisper](./whisper.md)
 
 [Next: Supported Media](../supported-media.md)
