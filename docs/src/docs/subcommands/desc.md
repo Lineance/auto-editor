@@ -25,4 +25,4 @@ Interesting.... https://www.youtube.com/watch?v=VaLXzI92t9M
 No description.
 ```
 
-<a class="next" href="./info">Next: info</a>
+[Next: info](./info.md)

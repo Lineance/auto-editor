@@ -290,7 +290,7 @@ Place this clip as an overlay when it is composited over a lower video track,
   `1.0`).
 
 `pos` has no effect on the base (bottom) track. It is mainly used inside a v3
-timeline's effects array (see [The v3 format](./v3)) or attached automatically by
+timeline's effects array (see [The v3 format](./v3.md)) or attached automatically by
 the `add` action below.
 
 ### add
@@ -302,10 +302,10 @@ Overlay a media file on top of the matched sections, `add:path` or
   images are held for the whole section. In place of a file, a **generator action** (with its
   usual arguments) may be given: the layer starts as a transparent canvas that
   the action paints, so the picture below shows through everywhere it did not
-  draw. The video generators are [confetti](/ref/actions#confetti) and
-  [drawbox](/ref/actions#drawbox); [tone](/ref/actions#tone) is an audio
+  draw. The video generators are [confetti](../ref/actions.md#confetti) and
+  [drawbox](../ref/actions.md#drawbox); [tone](../ref/actions.md#tone) is an audio
   generator, and adds an audio layer instead of a picture (all are marked `G`
-  in the [quick reference](/ref/actions#quick-reference)).
+  in the [quick reference](../ref/actions.md#quick-reference)).
 - **x**, **y**, **scale** — optional placement, applied via a `pos` action
   (above). When omitted, the overlay is scaled to fit the canvas (preserving
   aspect ratio) and centered, like a full-frame layer. Each may be a **ramp**
@@ -369,7 +369,7 @@ generator likewise needs no canvas and never grows a video stream.
 
 Unlike the other actions, `add` is **virtual**: it is not a per-frame effect but
 adds an overlay layer to the timeline (the same compositing used by stacked v3
-tracks; see [The v3 format](./v3)). It is colon-separated (one comma-field), so
+tracks; see [The v3 format](./v3.md)). It is colon-separated (one comma-field), so
 it chains with other actions.
 
 **Actions chained after an `add` apply to that new overlay layer, not the
@@ -413,7 +413,7 @@ auto-editor video.mp4 -w:0 speed:2,varispeed:1.5,volume:0.8
 
 ## Animations
 
-For transitions between clips, use the [edit-point option](./transition) instead of an action:
+For transitions between clips, use the [edit-point option](./transition.md) instead of an action:
 
 ```sh
 # Cross-dissolve cuts of at least 1 second; fade the timeline endpoints.
@@ -563,7 +563,7 @@ auto-editor video.mp4 -w:1 pixelate:4..48:ease=inout
 ```
 
 ## See Also
-- [Complete Actions Reference](/ref/actions)
-- [Audio Normalization](./anorm) - Volume normalization options
+- [Complete Actions Reference](../ref/actions.md)
+- [Audio Normalization](./anorm.md) - Volume normalization options
 
-<a class="next" href="./range-syntax">Next: Range Syntax</a>
+[Next: Range Syntax](./range-syntax.md)

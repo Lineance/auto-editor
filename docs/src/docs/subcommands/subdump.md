@@ -24,4 +24,4 @@ boop
 
 subdump won't work if the subtitle stream is internally represented as a bitmap image instead of formatted text.
 
-<a class="next" href="./whisper">Next: whisper</a>
+[Next: whisper](./whisper.md)

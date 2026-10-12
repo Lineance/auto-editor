@@ -108,4 +108,4 @@ auto-editor info example.mp4 --json
 }
 ```
 
-<a class="next" href="./levels">Next: levels</a>
+[Next: levels](./levels.md)

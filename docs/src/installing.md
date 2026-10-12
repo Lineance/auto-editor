@@ -69,4 +69,4 @@ nimble makewinarm
 ## Inputs
 Auto-Editor accepts local media files and timeline or Project JSON. It does not download remote URLs; prepare media assets before invoking the editor.
 
-<a class="next" href="/docs/cookbook">Next: Cookbook</a>
+[Next: Cookbook](./docs/cookbook.md)

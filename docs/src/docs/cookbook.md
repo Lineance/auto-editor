@@ -35,7 +35,7 @@ short silence trims don't stutter. Use `:0` to dissolve at every cut:
 auto-editor video.mp4 --transition dissolve:0.5sec:0
 ```
 
-Transitions survive editor exports too — see [Transitions](./transition).
+Transitions survive editor exports too — see [Transitions](./transition.md).
 
 ## Record and edit a microphone
 
@@ -134,7 +134,7 @@ Keep every moment, but fast-forward the quiet parts:
 auto-editor video.mp4 -w:0 speed:8
 ```
 
-See the [Actions Cookbook](./actions) for volume, zoom, overlays, and more.
+See the [Actions Cookbook](./actions.md) for volume, zoom, overlays, and more.
 
 ## Trim the beginning or end
 
@@ -143,7 +143,7 @@ See the [Actions Cookbook](./actions) for volume, zoom, overlays, and more.
 auto-editor video.mp4 --cut-out start,30sec -30sec,end
 ```
 
-More in [Range Syntax](./range-syntax).
+More in [Range Syntax](./range-syntax.md).
 
 ## Edit by what was said
 
@@ -155,7 +155,7 @@ auto-editor whisper video.mp4 ggml-medium.en.bin --format srt -o video.srt
 auto-editor video.mp4 --edit subtitle
 ```
 
-Auto-Editor understands `video.srt` is related to `video.mp4`. See the [whisper command](./subcommands/whisper) for more details.
+Auto-Editor understands `video.srt` is related to `video.mp4`. See the [whisper command](./subcommands/whisper.md) for more details.
 
 ## Hand off to your video editor
 
@@ -173,7 +173,7 @@ auto-editor video.mp4 --export clip-sequence
 ```
 
 ## See Also
-- [How to Shrink File Size](./file-size)
-- [All the Options (and What They Do)](/ref/options)
+- [How to Shrink File Size](./file-size.md)
+- [All the Options (and What They Do)](../ref/options.md)
 
-<a class="next" href="./actions">Next: Actions Cookbook</a>
+[Next: Actions Cookbook](./actions.md)

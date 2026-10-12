@@ -1,36 +1,5 @@
-# Source Code, Documents, and Resources For https://auto-editor.com.
+# Documentation Sources
 
-## Requirements
- - [Hunim](https://github.com/basswood-io/hunim)
- - rsync and ssh (for deployment)
+The documentation is maintained as Markdown files under `docs/src/`. Start with [index.md](src/index.md).
 
-```sh
-# Run local
-hunim server
-
-# Publish
-make upload
-```
-
-## Server Requirements
- - systemd
- - reverse proxy (nginx, etc.)
- - [bun](https://bun.com)
-
-## Deployment Example
-
-file `/etc/systemd/system/ae.service`
-
-```
-[Unit]
-Description=AutoEditor Website
-After=network.target
-
-[Service]
-User=root
-WorkingDirectory=/var/www/auto-editor
-ExecStart=/root/.bun/bin/bun run server.js
-
-[Install]
-WantedBy=multi-user.target
-```
+There is no separate website server, theme, deployment target, or generated HTML/CSS in this fork. Reference pages point to the CLI and source definitions where the exact option or action set is version-dependent.

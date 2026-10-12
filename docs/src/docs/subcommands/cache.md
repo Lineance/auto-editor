@@ -18,4 +18,4 @@ To remove the cache files:
 auto-editor cache clear
 ```
 
-<a class="next" href="./desc">Next: desc</a>
+[Next: desc](./desc.md)

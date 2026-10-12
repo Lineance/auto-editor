@@ -4,11 +4,11 @@ title: Subcommands
 
 Commands (or subcommands) are auxiliary programs that offer additional functionality. They have their own options, separate from the main auto-editor cli.
 
-* [cache](./cache)
-* [desc](./desc)
-* [info](./info)
-* [levels](./levels)
-* [subdump](./subdump)
-* [whisper](./whisper)
+* [cache](./cache.md)
+* [desc](./desc.md)
+* [info](./info.md)
+* [levels](./levels.md)
+* [subdump](./subdump.md)
+* [whisper](./whisper.md)
 
-<a class="next" href="/docs/supported-media">Next: Supported Media</a>
+[Next: Supported Media](../supported-media.md)

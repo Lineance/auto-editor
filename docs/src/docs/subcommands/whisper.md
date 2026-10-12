@@ -60,4 +60,4 @@ Number of CPU threads to use for whisper processing. (default 4)
 ### Notes
 The `whisper` filter must be enabled in the ffmpeg auto-editor is using. If it isn't, whisper will report that it `Could not find whisper filter`.
 
-<a class="next" href="/docs/v1">Next: The v1 timeline format</a>
+[Next: The v1 timeline format](../v1.md)

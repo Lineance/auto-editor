@@ -25,7 +25,7 @@ func `$`(link: Link): string =
 
 const fragmented = Link(href: "https://ffmpeg.org/ffmpeg-formats.html#Fragmentation",
     a: "fragmented")
-const actionsRef = Link(href: "https://auto-editor.com/ref/actions",
+const actionsRef = Link(href: "https://github.com/Lineance/editor-core/blob/master/docs/src/docs/actions.md",
     a: "actions reference")
 
 type OptKind* = enum

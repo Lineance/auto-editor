@@ -55,4 +55,4 @@ Example:
 ffmpeg -i my-video.mp4 -c:a copy -c:v hevc -b:v 0 my-video-h265.mp4
 ```
 
-<a class="next" href="./subcommands">Next: Subcommands</a>
+[Next: Subcommands](./subcommands/index.md)

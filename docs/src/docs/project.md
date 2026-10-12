@@ -83,4 +83,4 @@ auto-editor my-project/project.json -o output.mp4
 
 The importer currently compiles Project JSON into the existing v3 timeline model. It does not yet save/edit Project JSON, migrate project schema versions, or implement datasets, templates, subtitles, text/shape clips, or project export. Complex HTML/CSS/GSAP scenes should first be rendered by the separate `@hyperframes/producer` adapter and referenced as video assets.
 
-For timeline-only interchange formats, see [v1](./v1), [v2](./v2), and [v3](./v3).
+For timeline-only interchange formats, see [v1](./v1.md), [v2](./v2.md), and [v3](./v3.md).
